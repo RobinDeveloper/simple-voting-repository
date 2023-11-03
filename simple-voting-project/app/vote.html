@@ -1,0 +1,29 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Voting Page</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.3.2/socket.io.js"></script>
+    <script src="js/main.js" defer></script>
+</head>
+<body>
+    <h1>Vote for an Option</h1>
+    <div>
+        <label>
+            <input type="radio" name="vote" value="option1">
+            Option 1
+        </label>
+    </div>
+    <div>
+        <label>
+            <input type="radio" name="vote" value="option2">
+            Option 2
+        </label>
+    </div>
+    <button id="voteButton">Vote</button>
+    <div id="voteMessage"></div>
+    <div id="voteCount"></div>
+</body>
+</html>
+
