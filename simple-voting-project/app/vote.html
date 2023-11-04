@@ -1,29 +1,48 @@
-
+<!-- /app/vote.html -->
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
+  <head>
+    <meta charset="UTF-8" />
     <title>Voting Page</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.3.2/socket.io.js"></script>
-    <script src="js/main.js" defer></script>
-</head>
-<body>
+    <link rel="stylesheet" href="css/style.css" />
+  </head>
+  <body>
     <h1>Vote for an Option</h1>
-    <div>
-        <label>
-            <input type="radio" name="vote" value="option1">
-            Option 1
-        </label>
+    <div id="voteBox">
+      <label>
+        <input type="radio" name="vote" value="option1" />
+        Player Left
+      </label>
+      <label>
+        <input type="radio" name="vote" value="option2" />
+        Player Right
+      </label>
     </div>
-    <div>
-        <label>
-            <input type="radio" name="vote" value="option2">
-            Option 2
-        </label>
-    </div>
-    <button id="voteButton">Vote</button>
+    <button id="voteButton">Submit</button>
     <div id="voteMessage"></div>
-    <div id="voteCount"></div>
-</body>
-</html>
+    <div id="background"></div>
+    <script src="js/main.js" defer></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", () => {
+        const voteInputs = document.querySelectorAll(
+          '#voteBox input[type="radio"]'
+        );
 
+        voteInputs.forEach((input) => {
+          input.addEventListener("change", function () {
+            // Remove 'active' class from all labels
+            voteInputs.forEach((inp) =>
+              inp.parentElement.classList.remove("active")
+            );
+
+            // Add 'active' class to the selected label
+            if (this.checked) {
+              this.parentElement.classList.add("active");
+            }
+          });
+        });
+      });
+    </script>
+  </body>
+</html>

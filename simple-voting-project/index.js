@@ -1,65 +1,84 @@
-const express = require('express');
-const http = require('http');
-const socketIO = require('socket.io');
-const path = require('path');
+const express = require("express");
+const http = require("http");
+const socketIO = require("socket.io");
+const path = require("path");
 
 const app = express();
 const server = http.createServer(app);
 const io = socketIO(server);
 
-// Serve static files from the 'app' directory
-app.use(express.static(path.join(__dirname, 'app')));
+app.use(express.static(path.join(__dirname, "app")));
 
-// Set route for the home path '/'
-app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'app', 'vote.html'));
+app.get("/", (req, res) => {
+  res.sendFile(path.join(__dirname, "app", "vote.html"));
 });
 
-app.get('/admin', (req, res) => {
-    res.sendFile(path.join(__dirname, 'app', 'admin.html'));
+app.get("/admin", (req, res) => {
+  res.sendFile(path.join(__dirname, "app", "admin.html"));
 });
 
-
-app.get('/js/admin.js', (req, res) => {
-    res.set('Content-Type', 'text/javascript');
-    res.sendFile(path.join(__dirname, 'app', 'js', 'admin.js'));
+app.get("/result", (req, res) => {
+  res.sendFile(path.join(__dirname, "app", "result.html"));
 });
 
-// Store vote counts
 let votes = {
-    option1: 0,
-    option2: 0
+  option1: 0,
+  option2: 0,
 };
 
-let isVotingLocked = true;
+let resetCount = 0;
+let voterCount = 0; // Variable to track the number of people who have voted
+let totalConnections = 0; // Track total active connections
 
-// Socket.io connection
-io.on('connection', (socket) => {
-    console.log('New user connected');
+const resetVotes = () => {
+  votes = { option1: 0, option2: 0 };
+  io.emit("updateVotes", votes);
+  voterCount = 0; // Reset voter count when votes are reset
+  io.emit("resetComplete"); // Inform the admin that the reset is complete
+};
 
-    socket.on('unlockVoting', () => {
-        isVotingLocked = false;
-        // Reset the vote counts when voting is unlocked
-        votes = { option1: 0, option2: 0 };
-        io.emit('votingUnlocked');
-        io.emit('updateVotes', votes); // Send updated vote counts to all clients
-    });
+io.on("connection", (socket) => {
+  totalConnections++; // Increment total connections when a new user connects
+  console.log("New user connected. Total connections: " + totalConnections);
 
-    // Send current vote counts to the connected client
-    socket.emit('updateVotes', votes);
+  // Send current votes to the newly connected client
+  socket.emit("updateVotes", votes);
 
-    // Handle incoming votes
-    socket.on('vote', (option) => {
-        votes[option]++;
-        // Broadcast updated vote counts to all connected clients
-        io.emit('updateVotes', votes);
-    });
+  socket.on("unlockVoting", () => {
+    resetCount++;
+    if (resetCount >= 3) {
+      resetVotes();
+      resetCount = 0;
+    }
+    io.emit("votingUnlocked");
+    io.emit("updateVotes", votes);
+    io.emit("resetCountUpdate", resetCount);
+  });
+
+  socket.on("vote", (option) => {
+    if (votes.hasOwnProperty(option)) {
+      votes[option]++;
+      io.emit("updateVotes", votes);
+      voterCount++; // Increment voter count on each vote
+      // Check if all connected users have voted
+      if (voterCount >= totalConnections) {
+        io.emit("allVoted"); // Inform admin that all connected clients have voted
+      }
+    }
+  });
+
+  // Decrement total connections on disconnect and reset votes if no users are connected
+  socket.on("disconnect", () => {
+    totalConnections--;
+    console.log("User disconnected. Total connections: " + totalConnections);
+    if (totalConnections === 0) {
+      // Optionally reset votes if you want a fresh start when no one is connected
+      resetVotes();
+    }
+  });
 });
 
-// Start the server
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
+  console.log(`Server is running on port ${PORT}`);
 });
-
-
